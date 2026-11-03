@@ -118,7 +118,7 @@
                 </div>
             </div>
 
-            <button onclick="triggerRegisterRedirect()" class="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold text-xs sm:text-sm px-4 py-2.5 rounded-xl shadow-lg transition-all duration-300 transform hover:scale-105 flex items-center gap-2 border border-indigo-400/30">
+            <button id="installAppBtn" onclick="installAppPrompt()" class="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold text-xs sm:text-sm px-4 py-2.5 rounded-xl shadow-lg transition-all duration-300 transform hover:scale-105 flex items-center gap-2 border border-indigo-400/30">
                 <span>DOWNLOAD APP</span>
                 <i class="fa-solid fa-download text-xs"></i>
             </button>
@@ -127,6 +127,20 @@
 
     <!-- MAIN CONTAINER -->
     <main class="max-w-4xl mx-auto px-4 pt-5 space-y-6">
+
+        <!-- LIVE CLOCK & DATE BAR -->
+        <div class="bg-amber-950/60 border border-amber-800/50 rounded-2xl p-3.5 shadow-md flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+                <i class="fa-regular fa-clock text-amber-400 text-lg"></i>
+                <div>
+                    <div id="liveDayDate" class="text-xs sm:text-sm font-extrabold text-white capitalize">Inapakia tarehe...</div>
+                    <div class="text-[10px] text-amber-300/80 font-medium">Muda wa Live Mtandaoni</div>
+                </div>
+            </div>
+            <div id="liveTime" class="text-xs sm:text-sm font-black bg-brand-dark px-3 py-1.5 rounded-xl border border-amber-900/60 text-emerald-400 tracking-wider">
+                00:00:00
+            </div>
+        </div>
 
         <!-- BIG REGISTRATION BANNER BUTTON -->
         <div class="transform transition hover:scale-[1.01] active:scale-[0.99]">
@@ -478,14 +492,66 @@
         // Timer interval variable
         let chatTimerInterval = null;
         let secondsRemaining = 60;
+        let deferredPrompt = null;
+
+        // Install PWA Prompt Listener
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+        });
+
+        function installAppPrompt() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('User accepted the install prompt');
+                    }
+                    deferredPrompt = null;
+                });
+            } else {
+                alert("Ili kuweka (Install) app hii kwenye Desktop au Simu yako, tumia menyu ya kivinjari chako (Chrome/Edge/Safari) na uchague 'Install' au 'Add to Home Screen'.");
+            }
+        }
 
         // Redirect helper
         function triggerRegisterRedirect() {
             window.open(REGISTER_LINK, '_blank') || (window.location.href = REGISTER_LINK);
         }
 
+        // Live Real-Time Date & Clock Function
+        function startLiveClock() {
+            const days = ["Jumapili", "Jumatatu", "Jumanne", "Jumatano", "Alhamisi", "Ijumaa", "Jumamosi"];
+            const months = ["Januari", "Februari", "Machi", "Aprili", "Mei", "Juni", "Julai", "Agosti", "Septemba", "Oktoba", "Novemba", "Desemba"];
+
+            function updateClock() {
+                const now = new Date();
+                const dayName = days[now.getDay()];
+                const dateNum = now.getDate();
+                const monthName = months[now.getMonth()];
+                const year = now.getFullYear();
+
+                const hours = String(now.getHours()).padStart(2, '0');
+                const minutes = String(now.getMinutes()).padStart(2, '0');
+                const seconds = String(now.getSeconds()).padStart(2, '0');
+
+                const dateString = `${dayName}, ${dateNum} ${monthName} ${year}`;
+                const timeString = `${hours}:${minutes}:${seconds}`;
+
+                const dateEl = document.getElementById('liveDayDate');
+                const timeEl = document.getElementById('liveTime');
+
+                if (dateEl) dateEl.innerText = dateString;
+                if (timeEl) timeEl.innerText = timeString;
+            }
+
+            updateClock();
+            setInterval(updateClock, 1000);
+        }
+
         // Render Page Data on Load
         window.addEventListener('DOMContentLoaded', () => {
+            startLiveClock();
             renderGuests();
             renderPayouts();
         });
@@ -541,9 +607,6 @@
                                 </div>
                             </div>
                         </div>
-                        <span class="text-[11px] font-bold text-gray-400 bg-brand-dark/80 px-2.5 py-1 rounded-lg border border-amber-900/40">
-                            <i class="fa-regular fa-calendar-days text-amber-500 mr-1"></i>Nov 1
-                        </span>
                     </div>
 
                     <div class="grid grid-cols-2 gap-2 my-3 text-xs">
